@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JavaScript Weather Widget</title>
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      color: #222;
+      background: #fff;
+      line-height: 1.6;
+    }
+
+    .site-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 24px;
+      border-bottom: 1px solid #ddd;
+    }
+
+    .site-header a {
+      font-weight: 600;
+      color: inherit;
+      text-decoration: none;
+    }
+
+    /* Reserve space so the header doesn't jump when the widget appears */
+    .weather-widget {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-width: 110px;
+      font-size: 0.95rem;
+    }
+
+    .weather-widget[hidden] { display: none; }
+
+    .weather-loc {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 0.8rem;
+      color: #666;
+    }
+
+    main {
+      max-width: 640px;
+      margin: 48px auto;
+      padding: 0 24px;
+    }
+  </style>
+</head>
+<body>
+
+  <header class="site-header">
+    <a href="/">Your Site</a>
+
+    <!-- Change the city by editing these attributes -->
+    <div
+      class="weather-widget"
+      id="weather-widget"
+      data-lat="44.9778"
+      data-lon="-93.2650"
+      data-city="Minneapolis"
+      data-label="MSP"
+      data-timezone="America/Chicago"
+      hidden
+    >
+      <span class="weather-icon" aria-hidden="true"></span>
+      <span class="weather-temp"></span>
+      <span class="weather-loc"></span>
+    </div>
+  </header>
+
+  <main>
+    <h1>Weather widget demo</h1>
+    <p>The current conditions are in the upper right corner. This page has no server code. The browser calls Open-Meteo directly.</p>
+  </main>
+
+  <script>
+    (function () {
+      var CACHE_MS = 20 * 60 * 1000; // 20 minutes
+
+      // Weather codes from Open-Meteo, mapped to a description and emoji
+      var CODES = {};
+      function add(codes, description, icon) {
+        codes.forEach(function (c) { CODES[c] = { description: description, icon: icon }; });
+      }
+
+      add([0], "Clear", "☀️");
+      add([1], "Mostly clear", "🌤️");
+      add([2], "Partly cloudy", "⛅");
+      add([3], "Overcast", "☁️");
+      add([45, 48], "Foggy", "🌫️");
+      add([51, 53, 55], "Drizzle", "🌦️");
+      add([56, 57], "Freezing drizzle", "🌧️");
+      add([61, 63, 65], "Rain", "🌧️");
+      add([66, 67], "Freezing rain", "🌧️");
+      add([71, 73, 75], "Snow", "❄️");
+      add([77], "Snow grains", "❄️");
+      add([80, 81, 82], "Rain showers", "🌧️");
+      add([85, 86], "Snow showers", "🌨️");
+      add([95], "Thunderstorm", "⛈️");
+      add([96, 99], "Thunderstorm w/ hail", "⛈️");
+
+      function describe(code) {
+        return CODES[code] || { description: "Weather", icon: "🌡️" };
+      }
+
+      // localStorage can throw (private mode, blocked storage), so wrap it
+      function readCache(key) {
+        try {
+          var saved = JSON.parse(localStorage.getItem(key));
+          if (saved && Date.now() - saved.time < CACHE_MS) return saved.data;
+        } catch (e) {}
+        return null;
+      }
+
+      function writeCache(key, data) {
+        try {
+          localStorage.setItem(key, JSON.stringify({ time: Date.now(), data: data }));
+        } catch (e) {}
+      }
+
+      async function fetchWeather(el) {
+        var params = new URLSearchParams({
+          latitude: el.dataset.lat,
+          longitude: el.dataset.lon,
+          current: "temperature_2m,weather_code",
+          temperature_unit: "fahrenheit",
+          timezone: el.dataset.timezone
+        });
+
+        var res = await fetch("https://api.open-meteo.com/v1/forecast?" + params, {
+          signal: AbortSignal.timeout(5000)
+        });
+        if (!res.ok) return null;
+
+        var json = await res.json();
+        if (!json.current) return null;
+
+        var info = describe(json.current.weather_code);
+        return {
+          tempF: Math.round(json.current.temperature_2m),
+          description: info.description,
+          icon: info.icon
+        };
+      }
+
+      function render(el, weather) {
+        el.title = weather.description + " in " + el.dataset.city;
+        el.querySelector(".weather-icon").textContent = weather.icon;
+        el.querySelector(".weather-temp").textContent = weather.tempF + "°F";
+        el.querySelector(".weather-loc").textContent = el.dataset.label;
+        el.hidden = false;
+      }
+
+      async function init() {
+        var el = document.getElementById("weather-widget");
+        if (!el) return;
+
+        var cacheKey = "weather:" + el.dataset.lat + "," + el.dataset.lon;
+        var weather = readCache(cacheKey);
+
+        if (!weather) {
+          try {
+            weather = await fetchWeather(el);
+          } catch (e) {
+            return; // leave the widget hidden
+          }
+          if (weather) writeCache(cacheKey, weather);
+        }
+
+        if (weather) render(el, weather);
+      }
+
+      init();
+    })();
+  </script>
+
+</body>
+</html>
