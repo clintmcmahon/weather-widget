@@ -1,0 +1,16 @@
+/* Reserve space so the header doesn't jump when the widget appears */
+.weather-widget {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 110px;
+  font-size: 0.95rem;
+}
+
+.weather-widget[hidden] { display: none; }
+
+.weather-loc {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.8rem;
+  color: #666;
+}

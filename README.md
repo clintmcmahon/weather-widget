@@ -1,22 +1,16 @@
 # weather-widget
 
-A single-file weather widget for a site header. It shows an icon, the current temperature in °F, and a short location label. No build step, no dependencies, no server code. The browser calls [Open-Meteo](https://open-meteo.com/) directly, which needs no API key.
+A small weather widget for a site header. It shows an icon, the current temperature in °F, and a short location label. No build step, no dependencies, no server code. The browser calls [Open-Meteo](https://open-meteo.com/) directly, which needs no API key.
 
 Live demo: https://clintmcmahon.github.io/weather-widget/
 
 ## Use it
 
-Open `index.html` in a browser, or copy the widget into your own page. You need three pieces:
-
-1. The `.weather-widget` markup and its CSS.
-2. The `<script>` block at the bottom.
-3. A `data-*` configuration on the widget element.
-
-## Configure
-
-Set the city with data attributes on `#weather-widget`:
+Add the stylesheet, the markup, and the script to your page:
 
 ```html
+<link rel="stylesheet" href="https://clintmcmahon.github.io/weather-widget/weather-widget.css">
+
 <div
   class="weather-widget"
   id="weather-widget"
@@ -26,8 +20,25 @@ Set the city with data attributes on `#weather-widget`:
   data-label="MSP"
   data-timezone="America/Chicago"
   hidden
-></div>
+>
+  <span class="weather-icon" aria-hidden="true"></span>
+  <span class="weather-temp"></span>
+  <span class="weather-loc"></span>
+</div>
+
+<script src="https://clintmcmahon.github.io/weather-widget/weather-widget.js" defer></script>
 ```
+
+The element must have `id="weather-widget"`, and only one widget per page is supported.
+
+To pin a version, serve the files from jsDelivr after tagging a release:
+`https://cdn.jsdelivr.net/gh/clintmcmahon/weather-widget@v1.0.0/weather-widget.js`. Pointing at the Pages URL tracks `main`, so every push changes every embed.
+
+You can also download `weather-widget.css` and `weather-widget.js` and host them yourself.
+
+## Configure
+
+Set the city with data attributes on `#weather-widget`:
 
 | Attribute | Purpose |
 | --- | --- |
@@ -36,7 +47,7 @@ Set the city with data attributes on `#weather-widget`:
 | `data-label` | Short text shown next to the temperature |
 | `data-timezone` | IANA timezone for the request |
 
-Temperatures are Fahrenheit. For Celsius, change `temperature_unit` in `fetchWeather()` to `"celsius"` and the `°F` suffix in `render()`.
+Temperatures are Fahrenheit. For Celsius, self-host `weather-widget.js` and change `temperature_unit` in `fetchWeather()` to `"celsius"` and the `°F` suffix in `render()`.
 
 ## How it behaves
 
@@ -47,4 +58,4 @@ Temperatures are Fahrenheit. For Celsius, change `temperature_unit` in `fetchWea
 
 ## Hosting
 
-The repo is served with GitHub Pages from the `main` branch root.
+The repo is served with GitHub Pages from the `main` branch root. `index.html` is the demo page, and `weather-widget.css` and `weather-widget.js` are the files to embed.
